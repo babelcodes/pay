@@ -1,2 +1,5 @@
-# pay
-Recipes about online payment, solutions e.g. Stripe.com
+# Pay
+
+Recipes about online payment solutions
+
+- [Stripe](./stripe)
