@@ -8,6 +8,7 @@ Table Of Content
 - [Concepts](#concepts)
 - [Customer (optional)](#customer-optional)
 - [PaymentLinks (optional)](#payment-links-optional)
+- [Webhooks](#wbebhooks)
 
 ## Resources
 
@@ -154,3 +155,22 @@ use Payment Links and share the link as many times as you want on social media,
 in emails, or on your website.
 
 
+
+## Webhooks
+> A webhook is an endpoint on your server that receives requests from Stripe, 
+> notifying you about events that happen on your account such as a customer 
+> disputing a charge or a successful recurring payment.
+- https://stripe.com/docs/webhooks/quickstart
+- Stripe sends the event data in the request body, structured as an [Event object](https://stripe.com/docs/api/events) with a `type`, `id`, and related Stripe resource nested under data
+- You need a Endpoint Secret:
+   - If you are testing with the CLI, find the secret by running `stripe listen` (see Dev section above)
+   - If you are using an endpoint defined with the API or dashboard, look in your [webhook settings](https://dashboard.stripe.com/webhooks)
+- You can use one webhook to handle several different event types at once, or set up individual endpoints for specific events.
+- Send a successful 200 response to Stripe as quickly as possible because Stripe retries the event if a response isn’t sent within a reasonable time
+
+```shell
+$ npm start
+$ stripe login
+$ stripe listen --forward-to http://localhost:3000/api/v1/webhooks/stripe
+$ stripe trigger payment_intent.succeeded
+```
