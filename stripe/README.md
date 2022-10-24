@@ -6,9 +6,14 @@ Table Of Content
 - [Resources](#resources)
 - [Dev](#dev)
 - [Concepts](#concepts)
+  - [(Web) Elements](#web-elements)
+  - [Products and prices](#products-and-prices)
+  - [Checkout session](#checkout-session)
+  - [Accept a payment & PaymentIntent](#accept-a-payment--paymentintent)
+  - [Result notification](#result-notification)
 - [Customer (optional)](#customer-optional)
 - [PaymentLinks (optional)](#payment-links-optional)
-- [Webhooks](#wbebhooks)
+- [Webhooks](#webhooks)
 
 ## Resources
 
@@ -18,8 +23,10 @@ Table Of Content
 
 ## Dev
 ```shell
+$ stripe login
 $ stripe listen --forward-to localhost:3000/webhook
 ```
+- https://stripe.com/docs/cli/listen
 
 ## Concepts
 
@@ -43,11 +50,11 @@ Elements features include:
 ### Products and Prices
 
 - [getting-started](https://stripe.com/docs/products-prices/getting-started)
-    - [pricing-models#flat-rate](https://stripe.com/docs/products-prices/pricing-models#flat-rate)
-    - [pricing-models#multicurrency](https://stripe.com/docs/products-prices/pricing-models#multicurrency)
-    - [manage-prices](https://stripe.com/docs/products-prices/manage-prices)
+  - [pricing-models#flat-rate](https://stripe.com/docs/products-prices/pricing-models#flat-rate)
+  - [pricing-models#multicurrency](https://stripe.com/docs/products-prices/pricing-models#multicurrency)
+  - [manage-prices](https://stripe.com/docs/products-prices/manage-prices)
 - [Products API](https://stripe.com/docs/api/products)
-    - [Prices API](https://stripe.com/docs/api/prices)
+  - [Prices API](https://stripe.com/docs/api/prices)
 
 As we have a large catalog of (Korali) products and especially dynamically created
 by the user / admin, we need to continuously (programmatically) import / synchronise
@@ -63,16 +70,16 @@ Checklist:
 - [ ] Store each Stripe Price ID: it is needed to use the Stripe API to pay
 - [ ] Confirm the creation ([api/products/list](https://stripe.com/docs/api/products/list))
 - [ ] Synchronized (Korali) products catalog with Stripe (can use webhooks, [api/products/update](https://stripe.com/docs/api/products/update))
-    - [ ] Get existing (active) Stripe price
-    - [ ] If amount has changed, create new price (active)
-    - [ ] Update previous active one as not active
+  - [ ] Get existing (active) Stripe price
+  - [ ] If amount has changed, create new price (active)
+  - [ ] Update previous active one as not active
 
 
 ### Checkout session
 > A Checkout Session is the programmatic representation of what your customer sees
 > when they’re redirected to the payment form.
 - [Checkout Session](https://stripe.com/docs/payments/accept-a-payment?platform=web&ui=checkout#redirect-customers)
-    - [Checkout Session for Subscriptions](https://stripe.com/docs/billing/subscriptions/build-subscriptions?ui=checkout#create-session)
+  - [Checkout Session for Subscriptions](https://stripe.com/docs/billing/subscriptions/build-subscriptions?ui=checkout#create-session)
 - [api/checkout/sessions/create](https://stripe.com/docs/api/checkout/sessions/create)
 
 Checkout Sessions expire 24 hours after creation.
@@ -121,11 +128,51 @@ app.post('/create-checkout-session', async (req, res) => {
 ```
 
 
-### Get success notification
+### Accept a payment & PaymentIntent
+
+- [Accept a payment | Stripe Documentation](https://stripe.com/docs/payments/accept-a-payment?platform=web&ui=elements)
+- [The Payment Intents API | Stripe Documentation](https://stripe.com/docs/payments/payment-intents)
+- [api/payment_intents](https://stripe.com/docs/api/payment_intents)
+
+> You can build a custom payment flow by embedding the Payment Element, which allows
+> you to accept multiple payment methods using a single integration.
+
+- Building an integration with the Payment Intents API involves two actions: creating and confirming a PaymentIntent.
+- Each PaymentIntent typically correlates with a single shopping cart or customer session in your application.
+- The PaymentIntent encapsulates details about the transaction, such as the supported payment methods,
+  the amount to collect, and the desired currency.
+- At least one payment method should be enabled
+- Stripe uses a PaymentIntent object to represent your intent to collect payment from a customer,
+  tracking charge attempts and payment state changes throughout the process.
+- The payment methods shown to customers during the checkout process are also included on the PaymentIntent.
+- Each payment method must support the currency passed in the PaymentIntent
+
+Inputs:
+- amount
+- currency
+- automatic_payment_methods
+
+Outputs:
+- client_secret
+
+Workflow:
+1. `{client_secret}` = `stripe.paymentIntents.create`
+1. `stripe.elements({client_secret}).create('payment').mount('#myDomELement')`
+1. `stripe.confirmPayment(...)`
+1. `https://my.site.com/result?payment_intent=&payment_intent_client_secret` => `stripe.retrievePaymentIntent(clientSecret)`
+1. `https://my.site.com/webhook`
+
+See the following section about Webhooks and follow those events:
+- `payment_intent.succeeded`
+- `payment_intent.processing`
+- `payment_intent.failed`
+
+### Result notification & Webhooks
 > After you integrate Stripe Checkout or create a Stripe Payment Link to take your
 > customers to a payment form, you need notification that you can fulfill their
 > order after they pay.
 - https://stripe.com/docs/payments/checkout/fulfill-orders
+- https://stripe.com/docs/webhooks/quickstart
 
 Checklist:
 - [ ] Receive an event notification when a customer pays you.
@@ -133,7 +180,7 @@ Checklist:
 - [ ] Use Stripe CLI to quickly test your new event handler.
 - [ ] Optionally, handle additional payment methods.
 - [ ] Turn on your event handler in production (register it).
-    - https://stripe.com/docs/webhooks/go-live
+  - https://stripe.com/docs/webhooks/go-live
 
 
 ## Customer (optional)
